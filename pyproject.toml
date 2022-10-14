@@ -4,6 +4,19 @@ version = "1.0.0"
 description = "Shortipy is a RESTful Web API, written in Python language and based on the Flask micro-framework, designed to manage shortened links."
 authors = ["Simone Perini <perinisimone98@gmail.com>"]
 readme = "README.md"
+license = "GPL-3.0"
+repository = "https://github.com/CoffeePerry/shortipy"
+keywords = ["shortipy", "url", "shortener"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Flask",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Topic :: Communications",
+    "Topic :: Utilities",
+    "Typing :: Typed"
+]
 
 [tool.poetry.dependencies]
 python = "^3.10"
