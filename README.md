@@ -1,3 +1,5 @@
+![shortipy logo](https://github.com/CoffeePerry/shortipy/blob/main/art/shortipy.png?raw=true)
+
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/CoffeePerry/shortipy)
 ![PyPI](https://img.shields.io/pypi/v/shortipy?logo=PyPI&logoColor=white)
 ![PyPI - Status](https://img.shields.io/pypi/status/shortipy)
