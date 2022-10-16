@@ -6,28 +6,30 @@ from flask import Flask
 from flask.testing import FlaskCliRunner
 
 from shortipy.services.redis import redis_client
+from shortipy.services.url import generate_key
 
-from tests import KEY_TEST_CLI, URL_TEST_CLI
+from tests import URL_TEST_CLI
+
+from tests.conftest import ValueStorage
 
 
 class TestURL:
     """Test URL."""
 
-    @staticmethod
-    def test_set_url(application: Flask, runner: FlaskCliRunner):
-        """Test CLI set url.
+    def test_new_url(self, application: Flask, runner: FlaskCliRunner):
+        """Test CLI new url.
 
         :param application: Flask application.
         :type application: Flask
         :param runner: Flask CLI Runner.
         :type runner: FlaskCliRunner
         """
-        runner.invoke(args=['urls', 'set', '-k', KEY_TEST_CLI, '-u', URL_TEST_CLI])
+        result = runner.invoke(args=['urls', 'new', '-u', URL_TEST_CLI])
+        ValueStorage.key_cli = result.output[-7:-1]
         with application.app_context():
-            assert redis_client.get(KEY_TEST_CLI) == URL_TEST_CLI
+            assert redis_client.get(ValueStorage.key_cli) == URL_TEST_CLI
 
-    @staticmethod
-    def test_del_url(application: Flask, runner: FlaskCliRunner):
+    def test_del_url(self, application: Flask, runner: FlaskCliRunner):
         """Test CLI del url.
 
         :param application: Flask application.
@@ -35,6 +37,9 @@ class TestURL:
         :param runner: Flask CLI Runner.
         :type runner: FlaskCliRunner
         """
-        runner.invoke(args=['urls', 'del', '-k', KEY_TEST_CLI])
+        if ValueStorage.key_cli:
+            with application.app_context():
+                ValueStorage.key_cli = generate_key()
+        runner.invoke(args=['urls', 'del', '-k', ValueStorage.key_cli])
         with application.app_context():
-            assert redis_client.get(KEY_TEST_CLI) is None
+            assert redis_client.get(ValueStorage.key_cli) is None

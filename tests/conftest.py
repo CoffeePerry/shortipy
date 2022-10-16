@@ -53,3 +53,9 @@ def runner(application: Flask) -> FlaskCliRunner:  # pylint: disable=redefined-o
     :rtype: FlaskCliRunner
     """
     return application.test_cli_runner()
+
+
+class ValueStorage:  # pylint: disable=too-few-public-methods
+    """Class to storage values over tests."""
+
+    key_cli = None

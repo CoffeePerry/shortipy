@@ -2,6 +2,10 @@
 
 """shortipy.services.url file."""
 
+from string import ascii_lowercase
+from os import linesep
+from random import SystemRandom
+
 from click import STRING, option
 from flask import Flask
 from flask.cli import AppGroup
@@ -23,20 +27,50 @@ def init_app(app: Flask) -> Flask:
     return app
 
 
-@cli.command('set', help='Set URL by key.')
-@option('-k', '--key', type=STRING, prompt='Enter the key', help='Specify the key.')
-@option('-u', '--url', type=STRING, prompt='Enter the URL', help='Specify the URL.')
-def set_url(key: str, url: str):
-    """Set URL by key.
+def get_url(key: str) -> str | None:
+    """Get URL by passed key.
 
-    :param key; Key.
+    :param key: Key to find.
     :type key: str
+    :return: URL found or None.
+    :rtype: str | None
+    """
+    return redis_client.get(key)
+
+
+def insert_url(url: str) -> str:
+    """Insert passed url and generate a key to retrieve it.
+
+    :param url: URL to insert.
+    :type url: str
+    :return: key to retrieve the URL.
+    :rtype: str
+    """
+    key = generate_key()
+    redis_client.set(key, url)
+    return key
+
+
+def generate_key() -> str:
+    """Generate new key.
+
+    :return: A new key.
+    :rtype: str
+    """
+    return ''.join(SystemRandom().choice(ascii_lowercase) for _ in range(6))
+
+
+@cli.command('new', help='Insert new URL.')
+@option('-u', '--url', type=STRING, prompt='Enter the URL', help='Specify the URL.')
+def new_url(url: str):
+    """Insert new URL.
+
     :param url: URL.
     :type url: str
     """
-    print(f'Setting {key}...')
-    redis_client.set(key, url)
-    print('Done.')
+    print(f'Insert URL: {url}...')
+    key = insert_url(url)
+    print(f'Done.{linesep}Use the following key to retrieve it: {key}')
 
 
 @cli.command('del', help='Delete URL by key.')
