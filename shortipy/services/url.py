@@ -46,8 +46,12 @@ def insert_url(url: str) -> str:
     :return: key to retrieve the URL.
     :rtype: str
     """
-    key = generate_key()
-    redis_client.set(key, url)
+    key = ''
+    while True:
+        key = generate_key()
+        result = redis_client.set(key, url, nx=True)
+        if result is not None:
+            break
     return key
 
 
