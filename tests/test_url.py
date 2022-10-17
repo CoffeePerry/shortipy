@@ -17,7 +17,7 @@ class TestURL:
     """Test URL."""
 
     def test_new_url(self, application: Flask, runner: FlaskCliRunner):
-        """Test CLI new url.
+        """Test CLI new URL.
 
         :param application: Flask application.
         :type application: Flask
@@ -30,7 +30,7 @@ class TestURL:
             assert redis_client.get(ValueStorage.key_cli) == URL_TEST_CLI
 
     def test_del_url(self, application: Flask, runner: FlaskCliRunner):
-        """Test CLI del url.
+        """Test CLI del URL.
 
         :param application: Flask application.
         :type application: Flask

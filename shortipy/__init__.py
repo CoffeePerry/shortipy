@@ -10,7 +10,9 @@ from flask import Flask
 from shortipy.services.config import Config
 from shortipy.services.redis import init_app as init_redis
 from shortipy.services.url import init_app as init_url
+from shortipy.services.api import init_app as init_api
 from shortipy.controllers.resolution import resolution_blueprint
+from shortipy.controllers.api import api_blueprint
 
 VERSION: Final = '1.1.1'
 CONFIG_FILENAME: Final = 'config.py'
@@ -50,6 +52,7 @@ def create_app(options: dict | None = None) -> Flask | None:
     init_url(init_redis(app))
 
     app.register_blueprint(resolution_blueprint)
+    app.register_blueprint(init_api(api_blueprint))
 
     @app.cli.command('version', help='Display version.')
     def version():

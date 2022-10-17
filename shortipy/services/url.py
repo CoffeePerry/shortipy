@@ -39,7 +39,7 @@ def get_url(key: str) -> str | None:
 
 
 def insert_url(url: str) -> str:
-    """Insert passed url and generate a key to retrieve it.
+    """Insert passed URL and generate a key to retrieve it.
 
     :param url: URL to insert.
     :type url: str
