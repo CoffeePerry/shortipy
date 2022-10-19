@@ -46,7 +46,7 @@ def insert_url(url: str) -> str:
     :return: key to retrieve the URL.
     :rtype: str
     """
-    key = ''
+    key = None
     while True:
         key = generate_key()
         result = redis_client.set(key, url, nx=True)
@@ -74,7 +74,9 @@ def new_url(url: str):
     """
     print(f'Insert URL: {url}...')
     key = insert_url(url)
-    print(f'Done.{linesep}Use the following key to retrieve it: {key}')
+    if key is None:
+        print('Error: unable to generate a valid key.')
+    print(f'Done.{linesep}Use the following key to retrieve it: {key}.')
 
 
 @cli.command('del', help='Delete URL by key.')

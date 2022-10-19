@@ -19,6 +19,5 @@ def init_app(app: Flask | Blueprint) -> Flask | Blueprint:
     :rtype: Flask | Blueprint
     """
     init_api(api)
-    if isinstance(app, Flask):
-        api.init_app(app)
+    api.init_app(app)
     return app
