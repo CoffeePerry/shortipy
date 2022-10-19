@@ -14,10 +14,10 @@ from tests.conftest import ValueStorage
 
 
 class TestURL:
-    """Test URL."""
+    """Test url."""
 
     def test_new_url(self, application: Flask, runner: FlaskCliRunner):
-        """Test CLI new URL.
+        """Test CLI new url.
 
         :param application: Flask application.
         :type application: Flask
@@ -30,7 +30,7 @@ class TestURL:
             assert redis_client.get(ValueStorage.key_cli) == URL_TEST_CLI
 
     def test_del_url(self, application: Flask, runner: FlaskCliRunner):
-        """Test CLI del URL.
+        """Test CLI del url.
 
         :param application: Flask application.
         :type application: Flask

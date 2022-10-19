@@ -9,14 +9,26 @@ from random import SystemRandom
 from click import STRING, option
 from flask import Flask
 from flask.cli import AppGroup
+from flask_restful import fields
+from flask_restful.reqparse import RequestParser
 
 from shortipy.services.redis import redis_client
 
-cli = AppGroup('urls', help='Manage URLs.')
+cli = AppGroup('urls', help='Manage urls.')
+
+"""Fields to marshal url to JSON."""
+url_fields = {
+    'key': fields.String,
+    'value': fields.String,
+    'links': {
+        # Replaces url ID with url uri (HATEOAS) through endpoint 'url'
+        'self': fields.Url('url')
+    }
+}
 
 
 def init_app(app: Flask) -> Flask:
-    """Initializes the application URLs.
+    """Initializes the application urls.
 
     :param app: The Flask application instance.
     :type app: Flask
@@ -27,62 +39,92 @@ def init_app(app: Flask) -> Flask:
     return app
 
 
+# region CRUD functions
+def get_urls() -> dict[str, str]:
+    """Get urls.
+
+    :return: Dictionary of urls (key and value).
+    :rtype: dict[str, str]
+    """
+    return {key: get_url(key) for key in redis_client.keys('*')}
+
+
 def get_url(key: str) -> str | None:
-    """Get URL by passed key.
+    """Get url by passed key.
 
     :param key: Key to find.
     :type key: str
-    :return: URL found or None.
+    :return: Url value found or None.
     :rtype: str | None
     """
     return redis_client.get(key)
 
 
 def insert_url(url: str) -> str:
-    """Insert passed URL and generate a key to retrieve it.
+    """Insert passed url and generate a key to retrieve it.
 
-    :param url: URL to insert.
+    :param url: Url value to insert.
     :type url: str
-    :return: key to retrieve the URL.
+    :return: Key to retrieve the url.
     :rtype: str
     """
-    key = None
     while True:
         key = generate_key()
         result = redis_client.set(key, url, nx=True)
         if result is not None:
             break
     return key
+# endregion
+
+
+# region Other functions
+def get_request_parser(request_parser: RequestParser = None) -> RequestParser:
+    """Get request parser for url.
+
+    :param request_parser: If exists, add request parser arguments to request_parser param.
+    :type request_parser: RequestParser
+    :return: Url request parser.
+    :rtype: RequestParser
+    """
+    if request_parser is None:
+        result = RequestParser()
+    else:
+        result = request_parser
+
+    result.add_argument('key', type=str, required=True, help='No url key provided.', location='json')
+    result.add_argument('url', type=str, required=True, help='No url value provided.', location='json')
+
+    return result
 
 
 def generate_key() -> str:
     """Generate new key.
 
-    :return: A new key.
+    :return: New key.
     :rtype: str
     """
     return ''.join(SystemRandom().choice(ascii_lowercase) for _ in range(6))
+# endregion
 
 
-@cli.command('new', help='Insert new URL.')
-@option('-u', '--url', type=STRING, prompt='Enter the URL', help='Specify the URL.')
+# region CLI functions
+@cli.command('new', help='Insert new url.')
+@option('-u', '--url', type=STRING, prompt='Enter the url', help='Specify the url.')
 def new_url(url: str):
-    """Insert new URL.
+    """Insert new url.
 
-    :param url: URL.
+    :param url: Url value.
     :type url: str
     """
-    print(f'Insert URL: {url}...')
+    print(f'Insert url: {url}...')
     key = insert_url(url)
-    if key is None:
-        print('Error: unable to generate a valid key.')
     print(f'Done.{linesep}Use the following key to retrieve it: {key}.')
 
 
-@cli.command('del', help='Delete URL by key.')
+@cli.command('del', help='Delete url by key.')
 @option('-k', '--key', type=STRING, prompt='Enter the key', help='Specify the key.')
 def del_url(key: str):
-    """Delete URL by key.
+    """Delete url by key.
 
     :param key; Key.
     :type key: str
@@ -90,3 +132,4 @@ def del_url(key: str):
     print(f'Deleting {key}...')
     redis_client.delete(key)
     print('Done.')
+# endregion
