@@ -9,22 +9,10 @@ from random import SystemRandom
 from click import STRING, option
 from flask import Flask
 from flask.cli import AppGroup
-from flask_restful import fields
-from flask_restful.reqparse import RequestParser
 
 from shortipy.services.redis import redis_client
 
 cli = AppGroup('urls', help='Manage urls.')
-
-"""Fields to marshal url to JSON."""
-url_fields = {
-    'key': fields.String,
-    'value': fields.String,
-    'links': {
-        # Replaces url ID with url uri (HATEOAS) through endpoint 'url'
-        'self': fields.Url('url')
-    }
-}
 
 
 def init_app(app: Flask) -> Flask:
@@ -78,25 +66,6 @@ def insert_url(url: str) -> str:
 
 
 # region Other functions
-def get_request_parser(request_parser: RequestParser = None) -> RequestParser:
-    """Get request parser for url.
-
-    :param request_parser: If exists, add request parser arguments to request_parser param.
-    :type request_parser: RequestParser
-    :return: Url request parser.
-    :rtype: RequestParser
-    """
-    if request_parser is None:
-        result = RequestParser()
-    else:
-        result = request_parser
-
-    result.add_argument('key', type=str, required=True, help='No url key provided.', location='json')
-    result.add_argument('url', type=str, required=True, help='No url value provided.', location='json')
-
-    return result
-
-
 def generate_key() -> str:
     """Generate new key.
 

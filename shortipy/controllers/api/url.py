@@ -2,27 +2,86 @@
 
 """shortipy.controllers.api.url file."""
 
-from flask import request
-from flask_restful import Resource, marshal
+from flask import Flask, Blueprint, request, abort
+from flask.views import MethodView
+# from webargs import fields
+# from webargs.flaskparser import use_args
 
 from shortipy.services.exceptions import MethodVersionNotFound
-from shortipy.services.url import url_fields, get_request_parser, get_urls
+from shortipy.services.serialization import marshmallow
+from shortipy.services.url import get_urls, get_url
 
 
-class UrlListAPI(Resource):
+class UrlSchema(marshmallow.Schema):
+    """Class to define url schema."""
+
+    class Meta:  # pylint: disable=too-few-public-methods
+        """Class Meta."""
+
+        ordered = True
+        fields = ('key', 'value', 'links')
+
+    links = marshmallow.Hyperlinks(  # pylint: disable=no-member
+        {
+            'self': marshmallow.URLFor('api.url', values=dict(key='<key>'))  # pylint: disable=no-member
+        }
+    )
+
+
+class UrlListAPI(MethodView):
     """Urls list API."""
+
+    init_every_request = False
 
     def __init__(self):
         """UrlListAPI constructor."""
-        self.reqparse = get_request_parser()
-        super().__init__()
+        self.urls_schema = UrlSchema(many=True)
 
-    @staticmethod
-    def get():
+    def get(self):
         """Get urls.
 
         :return: All urls.
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
-            return {'urls': [marshal(url, url_fields) for url in get_urls()]}
+            urls = get_urls()
+            if len(urls) < 1:
+                abort(404)
+            return {'urls': self.urls_schema.dump([{'key': key, 'value': value} for key, value in urls.items()])}
         raise MethodVersionNotFound()
+
+
+class UrlAPI(MethodView):
+    """Url API."""
+
+    init_every_request = False
+
+    def __init__(self):
+        """UrlAPI constructor."""
+        self.url_schema = UrlSchema()
+
+    def get(self, key: str):
+        """Get url.
+
+        :param key: Url key.
+        :type key: str
+        :return: Url.
+        """
+        if request.headers.get('Accept-Version', '1.0') == '1.0':
+            url = get_url(key)
+            if url is None:
+                abort(404)
+            return {'url': self.url_schema.dump({'key': key, 'value': url})}
+        raise MethodVersionNotFound()
+
+
+def register_api(app: Flask | Blueprint) -> Flask | Blueprint:
+    """Register API.
+
+    :param app: The Flask (or Blueprint) application instance.
+    :type app: Flask | Blueprint
+    :return: The Flask (or Blueprint) application instance.
+    :rtype: Flask | Blueprint
+    """
+    app.add_url_rule('/urls/', view_func=UrlListAPI.as_view('urls'))
+    app.add_url_rule('/urls/<key>', view_func=UrlAPI.as_view('url'))
+    return app

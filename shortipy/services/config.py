@@ -20,6 +20,9 @@ class Config:  # pylint: disable=too-few-public-methods
         # Flask Redis
         self.REDIS_URL = 'redis://127.0.0.1:6379/0'
 
+        # Flask Marshmallow
+        self.JSON_SORT_KEYS = False
+
     def get_dict(self) -> dict:
         """Get Config dict.
 

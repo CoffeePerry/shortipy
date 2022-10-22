@@ -28,7 +28,11 @@ def application() -> Generator[Flask, None, None]:
     })
     with __app.app_context():
         redis_client.set(KEY_TEST, URL_TEST)
-    yield __app
+    try:
+        yield __app
+    finally:
+        with __app.app_context():
+            redis_client.delete(KEY_TEST)
 
 
 @fixture
