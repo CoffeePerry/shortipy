@@ -31,14 +31,14 @@ def init_app(app: Flask) -> Flask:
 def get_urls() -> dict[str, str]:
     """Get urls.
 
-    :return: Dictionary of urls (key and value).
+    :return: Dictionary of urls (keys and values).
     :rtype: dict[str, str]
     """
-    return {key: get_url(key) for key in redis_client.keys('*')}
+    return {key: get_url_value(key) for key in redis_client.keys('*')}
 
 
-def get_url(key: str) -> str | None:
-    """Get url by passed key.
+def get_url_value(key: str) -> str | None:
+    """Get url value by passed key.
 
     :param key: Key to find.
     :type key: str
@@ -48,17 +48,17 @@ def get_url(key: str) -> str | None:
     return redis_client.get(key)
 
 
-def insert_url(url: str) -> str:
-    """Insert passed url and generate a key to retrieve it.
+def insert_url(value: str) -> str:
+    """Insert passed url value and generate a key to retrieve it.
 
-    :param url: Url value to insert.
-    :type url: str
+    :param value: Url value to insert.
+    :type value: str
     :return: Key to retrieve the url.
     :rtype: str
     """
     while True:
         key = generate_key()
-        result = redis_client.set(key, url, nx=True)
+        result = redis_client.set(key, value, nx=True)
         if result is not None:
             break
     return key

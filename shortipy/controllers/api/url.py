@@ -4,12 +4,12 @@
 
 from flask import Flask, Blueprint, request, abort
 from flask.views import MethodView
-# from webargs import fields
-# from webargs.flaskparser import use_args
+from webargs import fields
+from webargs.flaskparser import use_args
 
 from shortipy.services.exceptions import MethodVersionNotFound
 from shortipy.services.serialization import marshmallow
-from shortipy.services.url import get_urls, get_url
+from shortipy.services.url import get_urls, get_url_value, insert_url
 
 
 class UrlSchema(marshmallow.Schema):
@@ -35,18 +35,31 @@ class UrlListAPI(MethodView):
 
     def __init__(self):
         """UrlListAPI constructor."""
+        self.url_schema = UrlSchema()
         self.urls_schema = UrlSchema(many=True)
 
     def get(self):
         """Get urls.
 
         :return: All urls.
+        :rtype: dict[str, str]
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
             urls = get_urls()
             if len(urls) < 1:
                 abort(404)
             return {'urls': self.urls_schema.dump([{'key': key, 'value': value} for key, value in urls.items()])}
+        raise MethodVersionNotFound()
+
+    @use_args({'value': fields.Str(required=True)}, location='json')
+    def post(self, args):
+        """Post url.
+
+        :return: Inserted url.
+        :rtype: dict[str, str]
+        """
+        if request.headers.get('Accept-Version', '1.0') == '1.0':
+            return {'url': self.url_schema.dump({'key': insert_url(args['value']), 'value': args['value']})}, 201
         raise MethodVersionNotFound()
 
 
@@ -65,12 +78,13 @@ class UrlAPI(MethodView):
         :param key: Url key.
         :type key: str
         :return: Url.
+        :rtype: dict[str, str]
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
-            url = get_url(key)
-            if url is None:
+            value = get_url_value(key)
+            if value is None:
                 abort(404)
-            return {'url': self.url_schema.dump({'key': key, 'value': url})}
+            return {'url': self.url_schema.dump({'key': key, 'value': value})}
         raise MethodVersionNotFound()
 
 

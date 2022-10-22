@@ -11,7 +11,7 @@ from pytest import fixture
 from shortipy import create_app
 from shortipy.services.redis import redis_client
 
-from tests import KEY_TEST, URL_TEST
+from tests import URL_KEY_TEST, URL_VALUE_TEST
 
 
 @fixture
@@ -27,12 +27,12 @@ def application() -> Generator[Flask, None, None]:
         'REDIS_URL': 'redis://127.0.0.1:6379/0'
     })
     with __app.app_context():
-        redis_client.set(KEY_TEST, URL_TEST)
+        redis_client.set(URL_KEY_TEST, URL_VALUE_TEST)
     try:
         yield __app
     finally:
         with __app.app_context():
-            redis_client.delete(KEY_TEST)
+            redis_client.delete(URL_KEY_TEST)
 
 
 @fixture
@@ -62,4 +62,6 @@ def runner(application: Flask) -> FlaskCliRunner:  # pylint: disable=redefined-o
 class ValueStorage:  # pylint: disable=too-few-public-methods
     """Class to storage values over tests."""
 
-    key_cli = None
+    url_key_cli = None
+    url_key_client = None
+    url_value_client = None
