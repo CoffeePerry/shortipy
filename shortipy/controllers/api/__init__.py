@@ -18,6 +18,7 @@ def init_api(api: Api) -> Api:
     :return: The Flask application's API instance.
     :rtype: Api
     """
-    api.add_resource(UrlListAPI, '/urls/', endpoint='urls')
-    # api.add_resource(UrlAPI, '/url/<int:id>', endpoint='url')
+    if len(api.resources) < 1:
+        api.add_resource(UrlListAPI, '/urls/', endpoint='urls')
+        # api.add_resource(UrlAPI, '/url/<int:id>', endpoint='url')
     return api

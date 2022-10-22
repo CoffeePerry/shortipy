@@ -18,6 +18,5 @@ def init_app(app: Flask | Blueprint) -> Flask | Blueprint:
     :return: The Flask (or Blueprint) application instance.
     :rtype: Flask | Blueprint
     """
-    init_api(api)
-    api.init_app(app)
+    init_api(api).init_app(app)
     return app

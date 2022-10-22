@@ -25,7 +25,7 @@ class TestURL:
         :type runner: FlaskCliRunner
         """
         result = runner.invoke(args=['urls', 'new', '-u', URL_TEST_CLI])
-        ValueStorage.key_cli = result.output[-7:-1]
+        ValueStorage.key_cli = result.output[-8:-2]
         with application.app_context():
             assert redis_client.get(ValueStorage.key_cli) == URL_TEST_CLI
 
