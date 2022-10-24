@@ -76,6 +76,38 @@ def test_url_api_get_404(application: Flask, client: FlaskClient):
     assert response.status_code == 404
 
 
+def test_url_list_api_post_wrong_missing(application: Flask, client: FlaskClient):
+    """Test UrlListAPI POST wrong: missing value.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    try:
+        response = client.post('/api/urls/')
+        assert response.status_code == 422
+    finally:
+        with application.app_context():
+            redis_client.flushdb()
+
+
+def test_url_list_api_post_wrong_empty(application: Flask, client: FlaskClient):
+    """Test UrlListAPI POST wrong: empty value.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    try:
+        response = client.post('/api/urls/', json={'value': ''})
+        assert response.status_code == 422
+    finally:
+        with application.app_context():
+            redis_client.flushdb()
+
+
 def test_url_list_api_post(application: Flask, client: FlaskClient):
     """Test UrlListAPI POST.
 

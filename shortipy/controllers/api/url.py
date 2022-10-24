@@ -6,10 +6,11 @@ from flask import Flask, Blueprint, request, abort
 from flask.views import MethodView
 from webargs import fields
 from webargs.flaskparser import use_args
+from marshmallow.validate import Length
 
 from shortipy.services.exceptions import MethodVersionNotFound
 from shortipy.services.serialization import marshmallow
-from shortipy.services.url import get_urls, get_url_value, insert_url
+from shortipy.services.url import get_urls, get_url_value, insert_url, update_url
 
 
 class UrlSchema(marshmallow.Schema):
@@ -51,10 +52,12 @@ class UrlListAPI(MethodView):
             return {'urls': self.urls_schema.dump([{'key': key, 'value': value} for key, value in urls.items()])}
         raise MethodVersionNotFound()
 
-    @use_args({'value': fields.Str(required=True)}, location='json')
-    def post(self, args):
+    @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
+    def post(self, args: dict):
         """Post url.
 
+        :param args: Arguments.
+        :type args: dict
         :return: Inserted url.
         :rtype: dict[str, str]
         """
@@ -82,6 +85,24 @@ class UrlAPI(MethodView):
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
             value = get_url_value(key)
+            if value is None:
+                abort(404)
+            return {'url': self.url_schema.dump({'key': key, 'value': value})}
+        raise MethodVersionNotFound()
+
+    @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
+    def put(self, key: str, args: dict):
+        """Put url.
+
+        :param key: Url key.
+        :type key: str
+        :param args: Arguments.
+        :type args: dict
+        :return: Updated url.
+        :rtype: dict[str, str]
+        """
+        if request.headers.get('Accept-Version', '1.0') == '1.0':
+            value = update_url(key, args['value'])
             if value is None:
                 abort(404)
             return {'url': self.url_schema.dump({'key': key, 'value': value})}

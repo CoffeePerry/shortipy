@@ -62,6 +62,23 @@ def insert_url(value: str) -> str:
         if result is not None:
             break
     return key
+
+
+def update_url(key: str, value: str | None) -> str:
+    """Update url by passed key and value.
+
+    :param key: Key to find.
+    :type key: str
+    :param value: Url value to update.
+    :type value: str
+    :return: New url value or None if no key found.
+    :rtype: str | None
+    """
+    url_value = redis_client.get(key)
+    if url_value is not None:
+        redis_client.set(key, value)
+        url_value = value
+    return url_value
 # endregion
 
 
