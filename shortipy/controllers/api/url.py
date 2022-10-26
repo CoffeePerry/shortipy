@@ -91,13 +91,13 @@ class UrlAPI(MethodView):
         raise MethodVersionNotFound()
 
     @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
-    def put(self, key: str, args: dict):
+    def put(self, args: dict, key: str):
         """Put url.
 
-        :param key: Url key.
-        :type key: str
         :param args: Arguments.
         :type args: dict
+        :param key: Url key.
+        :type key: str
         :return: Updated url.
         :rtype: dict[str, str]
         """
