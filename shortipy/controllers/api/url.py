@@ -10,7 +10,7 @@ from marshmallow.validate import Length
 
 from shortipy.services.exceptions import MethodVersionNotFound
 from shortipy.services.serialization import marshmallow
-from shortipy.services.url import get_urls, get_url_value, insert_url, update_url
+from shortipy.services.url import get_urls, get_url_value, insert_url, update_url, delete_url
 
 
 class UrlSchema(marshmallow.Schema):
@@ -106,6 +106,22 @@ class UrlAPI(MethodView):
             if value is None:
                 abort(404)
             return {'url': self.url_schema.dump({'key': key, 'value': value})}
+        raise MethodVersionNotFound()
+
+    @staticmethod
+    def delete(key: str):
+        """Delete url.
+
+        :param key: Url key.
+        :type key: str
+        :return: Url.
+        :rtype: dict[str, str]
+        """
+        if request.headers.get('Accept-Version', '1.0') == '1.0':
+            if get_url_value(key) is None:
+                abort(404)
+            delete_url(key)
+            return '', 204
         raise MethodVersionNotFound()
 
 

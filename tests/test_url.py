@@ -158,6 +158,8 @@ def test_url_list_api_post(application: Flask, client: FlaskClient):
         assert response.json['url']['key'] == url_key
         assert response.json['url']['value'] == URL_VALUE_TEST
         assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
+        with application.app_context():
+            assert redis_client.get(url_key) == URL_VALUE_TEST
     finally:
         with application.app_context():
             redis_client.delete(url_key)
@@ -208,7 +210,7 @@ def test_url_api_get(application: Flask, client: FlaskClient):
 
 
 def test_url_api_put_wrong_method_version_not_found(application: Flask, client: FlaskClient):
-    """Test UrlListAPI PUT wrong: method version not found.
+    """Test UrlAPI PUT wrong: method version not found.
 
     :param application: Flask application.
     :type application: Flask
@@ -294,6 +296,55 @@ def test_url_api_put(application: Flask, client: FlaskClient):
         assert response.json['url']['key'] == url_key
         assert response.json['url']['value'] == URL_VALUE_BIS_TEST
         assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
+        with application.app_context():
+            assert redis_client.get(url_key) == URL_VALUE_BIS_TEST
+    finally:
+        with application.app_context():
+            redis_client.delete(url_key)
+
+
+def test_url_api_delete_wrong_method_version_not_found(application: Flask, client: FlaskClient):
+    """Test UrlAPI DELETE wrong: method version not found.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    response = client.delete(f'/api/urls/{URL_KEY_TEST}', headers={'Accept-Version': 'x.y'})
+    with application.app_context():
+        assert response.status_code == MethodVersionNotFound.code
+
+
+def test_url_api_delete_wrong_missing(application: Flask, client: FlaskClient):
+    """Test UrlAPI DELETE wrong: missing value.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    with application.app_context():
+        redis_client.flushdb()
+    response = client.delete(f'/api/urls/{URL_KEY_TEST}')
+    assert response.status_code == 404
+
+
+def test_url_api_delete(application: Flask, client: FlaskClient):
+    """Test UrlAPI DELETE.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    with application.app_context():
+        url_key = insert_url(URL_VALUE_TEST)
+    try:
+        response = client.delete(f'/api/urls/{url_key}')
+        assert response.status_code == 204
+        with application.app_context():
+            assert redis_client.get(url_key) is None
     finally:
         with application.app_context():
             redis_client.delete(url_key)

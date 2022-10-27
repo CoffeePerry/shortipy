@@ -79,6 +79,15 @@ def update_url(key: str, value: str | None) -> str:
         redis_client.set(key, value)
         url_value = value
     return url_value
+
+
+def delete_url(key: str):
+    """Delete url by passed key.
+
+    :param key: Url key to delete.
+    :type key: str
+    """
+    return redis_client.delete(key)
 # endregion
 
 
