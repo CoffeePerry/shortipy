@@ -21,8 +21,9 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.10"
 flask = "^2.2.2"
+flask-marshmallow = "^0.14.0"
 flask-redis = "^0.4.0"
-
+webargs = "^8.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pylint = "^2.15.4"

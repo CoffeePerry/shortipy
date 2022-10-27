@@ -12,7 +12,7 @@ resolution_blueprint = Blueprint('resolution', __name__)
 
 @resolution_blueprint.route('/<key>')
 def resolve(key: str) -> Response:
-    """Resolve the key in the correspondent URL and redirect.
+    """Resolve the key in the correspondent url and redirect.
 
     :param key: Key to resolve.
     :type key: str
