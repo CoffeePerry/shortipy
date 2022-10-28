@@ -14,7 +14,7 @@ from shortipy.services.url import init_app as init_url
 from shortipy.controllers.resolution import resolution_blueprint
 from shortipy.controllers.api import init_app as init_api
 
-VERSION: Final = '1.1.1'
+VERSION: Final = '1.2.0'
 CONFIG_FILENAME: Final = 'config.py'
 
 

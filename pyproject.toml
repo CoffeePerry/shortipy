@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shortipy"
-version = "1.1.1"
+version = "1.2.0"
 description = "Shortipy is a RESTful Web API, written in Python language and based on the Flask micro-framework, designed to manage shortened links."
 authors = ["Simone Perini <perinisimone98@gmail.com>"]
 readme = "README.md"
