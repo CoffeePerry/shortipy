@@ -102,10 +102,7 @@ class UrlAPI(MethodView):
         :rtype: dict[str, str]
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
-            value = update_url(key, args['value'])
-            if value is None:
-                abort(404)
-            return {'url': self.url_schema.dump({'key': key, 'value': value})}
+            return {'url': self.url_schema.dump({'key': key, 'value': update_url(key, args['value'])})}
         raise MethodVersionNotFound()
 
     @staticmethod
@@ -118,15 +115,13 @@ class UrlAPI(MethodView):
         :rtype: dict[str, str]
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
-            if get_url_value(key) is None:
-                abort(404)
             delete_url(key)
             return '', 204
         raise MethodVersionNotFound()
 
 
 def register_api(app: Flask | Blueprint) -> Flask | Blueprint:
-    """Register API.
+    """Register API controller.
 
     :param app: The Flask (or Blueprint) application instance.
     :type app: Flask | Blueprint

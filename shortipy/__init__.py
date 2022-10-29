@@ -9,6 +9,8 @@ from flask import Flask
 
 from shortipy.services.config import Config
 from shortipy.services.redis import init_app as init_redis
+from shortipy.services.hash import init_app as init_hash
+from shortipy.services.auth import init_app as init_auth
 from shortipy.services.serialization import init_app as init_serialization
 from shortipy.services.url import init_app as init_url
 from shortipy.controllers.resolution import resolution_blueprint
@@ -49,7 +51,7 @@ def create_app(options: dict | None = None) -> Flask | None:
     if options is not None:
         app.config.from_mapping(options)
 
-    init_url(init_serialization(init_redis(app)))
+    init_url(init_serialization(init_auth(init_hash(init_redis(app)))))
 
     app.register_blueprint(resolution_blueprint)
     app.register_blueprint(init_api())

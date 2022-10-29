@@ -17,6 +17,9 @@ class Config:  # pylint: disable=too-few-public-methods
         self.SESSION_COOKIE_SECURE = True
         self.SESSION_COOKIE_HTTPONLY = True
 
+        # Flask JWT Extended
+        self.JWT_SECRET_KEY = None
+
         # Flask Redis
         self.REDIS_URL = 'redis://127.0.0.1:6379/0'
 

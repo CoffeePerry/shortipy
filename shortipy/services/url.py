@@ -9,6 +9,7 @@ from random import SystemRandom
 from click import STRING, option
 from flask import Flask
 from flask.cli import AppGroup
+from werkzeug.exceptions import NotFound
 
 from shortipy.services.redis import redis_client
 
@@ -75,10 +76,11 @@ def update_url(key: str, value: str | None) -> str:
     :rtype: str | None
     """
     url_value = redis_client.get(key)
-    if url_value is not None:
-        redis_client.set(key, value)
-        url_value = value
-    return url_value
+    if url_value is None:
+        raise NotFound('Url not found')
+
+    redis_client.set(key, value)
+    return value
 
 
 def delete_url(key: str):
@@ -87,6 +89,9 @@ def delete_url(key: str):
     :param key: Url key to delete.
     :type key: str
     """
+    if get_url_value(key) is None:
+        raise NotFound('Url not found')
+
     return redis_client.delete(key)
 # endregion
 
@@ -125,6 +130,6 @@ def del_url(key: str):
     :type key: str
     """
     print(f'Deleting {key}...')
-    redis_client.delete(key)
+    delete_url(key)
     print('Done.')
 # endregion
