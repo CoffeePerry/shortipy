@@ -46,7 +46,7 @@ def test_del_url(application: Flask, runner: FlaskCliRunner):
             assert redis_client.get(url_key) is None
     finally:
         with application.app_context():
-            delete_url(url_key)
+            redis_client.delete(url_key)
 
 
 def test_url_list_api_get_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -347,4 +347,4 @@ def test_url_api_delete(application: Flask, client: FlaskClient):
             assert redis_client.get(url_key) is None
     finally:
         with application.app_context():
-            delete_url(url_key)
+            redis_client.delete(url_key)
