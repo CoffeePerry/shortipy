@@ -10,6 +10,7 @@ from shortipy.services.redis import redis_client
 from shortipy.services.url import insert_url, delete_url
 
 from tests import URL_KEY_TEST, URL_VALUE_TEST, URL_VALUE_BIS_TEST
+from tests.test_auth import Auth
 
 
 def test_new_url(application: Flask, runner: FlaskCliRunner):
@@ -57,9 +58,13 @@ def test_url_list_api_get_wrong_method_version_not_found(application: Flask, cli
     :param client: Flask Client.
     :type client: FlaskClient
     """
-    response = client.get('/api/urls/', headers={'Accept-Version': 'x.y'})
-    with application.app_context():
-        assert response.status_code == MethodVersionNotFound.code
+    with Auth(application, client) as access_token:
+        response = client.get('/api/urls/', headers={
+            'Authorization': f'Bearer {access_token}',
+            'Accept-Version': 'x.y'
+        })
+        with application.app_context():
+            assert response.status_code == MethodVersionNotFound.code
 
 
 def test_url_list_api_get_404(application: Flask, client: FlaskClient):

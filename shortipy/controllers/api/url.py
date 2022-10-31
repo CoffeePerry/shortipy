@@ -4,6 +4,7 @@
 
 from flask import Flask, Blueprint, request, abort
 from flask.views import MethodView
+from flask_jwt_extended import jwt_required
 from webargs import fields
 from webargs.flaskparser import use_args
 from marshmallow.validate import Length
@@ -39,6 +40,7 @@ class UrlListAPI(MethodView):
         self.url_schema = UrlSchema()
         self.urls_schema = UrlSchema(many=True)
 
+    @jwt_required()
     def get(self):
         """Get urls.
 
@@ -52,6 +54,7 @@ class UrlListAPI(MethodView):
             return {'urls': self.urls_schema.dump([{'key': key, 'value': value} for key, value in urls.items()])}
         raise MethodVersionNotFound()
 
+    @jwt_required()
     @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
     def post(self, args: dict):
         """Post url.
@@ -75,6 +78,7 @@ class UrlAPI(MethodView):
         """UrlAPI constructor."""
         self.url_schema = UrlSchema()
 
+    @jwt_required()
     def get(self, key: str):
         """Get url.
 
@@ -90,6 +94,7 @@ class UrlAPI(MethodView):
             return {'url': self.url_schema.dump({'key': key, 'value': value})}
         raise MethodVersionNotFound()
 
+    @jwt_required()
     @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
     def put(self, args: dict, key: str):
         """Put url.
@@ -106,6 +111,7 @@ class UrlAPI(MethodView):
         raise MethodVersionNotFound()
 
     @staticmethod
+    @jwt_required()
     def delete(key: str):
         """Delete url.
 

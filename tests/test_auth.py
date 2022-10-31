@@ -13,6 +13,42 @@ from shortipy.services.auth import insert_user, delete_user, normalize_input
 from tests import USER_USERNAME, USER_PASSWORD, USER_PASSWORD_WRONG
 
 
+class Auth:
+    """Auth class."""
+
+    def __init__(self, application: Flask, client: FlaskClient):
+        """Auth constructor.
+
+        :param application: Flask application.
+        :type application: Flask
+        :param client: Flask Client.
+        :type client: FlaskClient
+        """
+        self.application = application
+        self.client = client
+
+    def __enter__(self) -> str:
+        """Auth enter.
+
+        :return: Access token.
+        :rtype: str
+        """
+        with self.application.app_context():
+            insert_user(USER_USERNAME, USER_PASSWORD)
+        response = self.client.post('/api/auth/', json={'username': USER_USERNAME, 'password': USER_PASSWORD})
+        return response.json['auth']['access_token']
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Auth exit.
+
+        :param exc_type: Exception type.
+        :param exc_val: Exception value.
+        :param exc_tb: Exception traceback.
+        """
+        with self.application.app_context():
+            redis_client.delete(f'user:{USER_USERNAME}')
+
+
 def test_insert_user_wrong_duplicate(application: Flask):
     """Test insert user wrong: duplicate user.
 
