@@ -25,7 +25,7 @@ def test_new_url(application: Flask, runner: FlaskCliRunner):
     url_key = result.output[-8:-2]
     try:
         with application.app_context():
-            assert redis_client.get(url_key) == URL_VALUE_TEST
+            assert redis_client.get(f'url:{url_key}') == URL_VALUE_TEST
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -44,10 +44,10 @@ def test_del_url(application: Flask, runner: FlaskCliRunner):
     try:
         runner.invoke(args=['urls', 'del', '-k', url_key])
         with application.app_context():
-            assert redis_client.get(url_key) is None
+            assert redis_client.get(f'url:{url_key}') is None
     finally:
         with application.app_context():
-            redis_client.delete(url_key)
+            redis_client.delete(f'url:{url_key}')
 
 
 def test_url_list_api_get_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -77,8 +77,9 @@ def test_url_list_api_get_404(application: Flask, client: FlaskClient):
     """
     with application.app_context():
         redis_client.flushdb()
-    response = client.get('/api/urls/')
-    assert response.status_code == 404
+    with Auth(application, client) as access_token:
+        response = client.get('/api/urls/', headers={'Authorization': f'Bearer {access_token}'})
+        assert response.status_code == 404
 
 
 def test_url_api_get_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -92,9 +93,13 @@ def test_url_api_get_wrong_method_version_not_found(application: Flask, client: 
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.get(f'/api/urls/{url_key}', headers={'Accept-Version': 'x.y'})
-        with application.app_context():
-            assert response.status_code == MethodVersionNotFound.code
+        with Auth(application, client) as access_token:
+            response = client.get(f'/api/urls/{url_key}', headers={
+                'Authorization': f'Bearer {access_token}',
+                'Accept-Version': 'x.y'
+            })
+            with application.app_context():
+                assert response.status_code == MethodVersionNotFound.code
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -110,8 +115,9 @@ def test_url_api_get_404(application: Flask, client: FlaskClient):
     """
     with application.app_context():
         redis_client.flushdb()
-    response = client.get(f'/api/urls/{URL_KEY_TEST}')
-    assert response.status_code == 404
+    with Auth(application, client) as access_token:
+        response = client.get(f'/api/urls/{URL_KEY_TEST}', headers={'Authorization': f'Bearer {access_token}'})
+        assert response.status_code == 404
 
 
 def test_url_list_api_post_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -122,29 +128,39 @@ def test_url_list_api_post_wrong_method_version_not_found(application: Flask, cl
     :param client: Flask Client.
     :type client: FlaskClient
     """
-    response = client.post('/api/urls/', headers={'Accept-Version': 'x.y'}, json={'value': URL_VALUE_TEST})
-    with application.app_context():
-        assert response.status_code == MethodVersionNotFound.code
+    with Auth(application, client) as access_token:
+        response = client.post('/api/urls/', headers={
+            'Authorization': f'Bearer {access_token}',
+            'Accept-Version': 'x.y'
+        }, json={'value': URL_VALUE_TEST})
+        with application.app_context():
+            assert response.status_code == MethodVersionNotFound.code
 
 
-def test_url_list_api_post_wrong_missing(client: FlaskClient):
+def test_url_list_api_post_wrong_missing(application: Flask, client: FlaskClient):
     """Test UrlListAPI POST wrong: missing value.
 
+    :param application: Flask application.
+    :type application: Flask
     :param client: Flask Client.
     :type client: FlaskClient
     """
-    response = client.post('/api/urls/')
-    assert response.status_code == 422
+    with Auth(application, client) as access_token:
+        response = client.post('/api/urls/', headers={'Authorization': f'Bearer {access_token}'})
+        assert response.status_code == 422
 
 
-def test_url_list_api_post_wrong_empty(client: FlaskClient):
+def test_url_list_api_post_wrong_empty(application: Flask, client: FlaskClient):
     """Test UrlListAPI POST wrong: empty value.
 
+    :param application: Flask application.
+    :type application: Flask
     :param client: Flask Client.
     :type client: FlaskClient
     """
-    response = client.post('/api/urls/', json={'value': ''})
-    assert response.status_code == 422
+    with Auth(application, client) as access_token:
+        response = client.post('/api/urls/', headers={'Authorization': f'Bearer {access_token}'}, json={'value': ''})
+        assert response.status_code == 422
 
 
 def test_url_list_api_post(application: Flask, client: FlaskClient):
@@ -157,14 +173,16 @@ def test_url_list_api_post(application: Flask, client: FlaskClient):
     """
     url_key = ''
     try:
-        response = client.post('/api/urls/', json={'value': URL_VALUE_TEST})
-        assert response.status_code == 201
-        url_key = response.json['url']['key']
-        assert response.json['url']['key'] == url_key
-        assert response.json['url']['value'] == URL_VALUE_TEST
-        assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
-        with application.app_context():
-            assert redis_client.get(url_key) == URL_VALUE_TEST
+        with Auth(application, client) as access_token:
+            response = client.post('/api/urls/', headers={'Authorization': f'Bearer {access_token}'},
+                                   json={'value': URL_VALUE_TEST})
+            assert response.status_code == 201
+            url_key = response.json['url']['key']
+            assert response.json['url']['key'] == url_key
+            assert response.json['url']['value'] == URL_VALUE_TEST
+            assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
+            with application.app_context():
+                assert redis_client.get(f'url:{url_key}') == URL_VALUE_TEST
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -182,12 +200,13 @@ def test_url_list_api_get(application: Flask, client: FlaskClient):
         redis_client.flushdb()
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.get('/api/urls/')
-        assert response.status_code == 200
-        assert len(response.json['urls']) == 1
-        assert response.json['urls'][0]['key'] == url_key
-        assert response.json['urls'][0]['value'] == URL_VALUE_TEST
-        assert response.json['urls'][0]['links']['self'] == f'/api/urls/{url_key}'
+        with Auth(application, client) as access_token:
+            response = client.get('/api/urls/', headers={'Authorization': f'Bearer {access_token}'})
+            assert response.status_code == 200
+            assert len(response.json['urls']) == 1
+            assert response.json['urls'][0]['key'] == url_key
+            assert response.json['urls'][0]['value'] == URL_VALUE_TEST
+            assert response.json['urls'][0]['links']['self'] == f'/api/urls/{url_key}'
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -204,11 +223,12 @@ def test_url_api_get(application: Flask, client: FlaskClient):
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.get(f'/api/urls/{url_key}')
-        assert response.status_code == 200
-        assert response.json['url']['key'] == url_key
-        assert response.json['url']['value'] == URL_VALUE_TEST
-        assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
+        with Auth(application, client) as access_token:
+            response = client.get(f'/api/urls/{url_key}', headers={'Authorization': f'Bearer {access_token}'})
+            assert response.status_code == 200
+            assert response.json['url']['key'] == url_key
+            assert response.json['url']['value'] == URL_VALUE_TEST
+            assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -225,11 +245,15 @@ def test_url_api_put_wrong_method_version_not_found(application: Flask, client: 
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.put(
-            f'/api/urls/{url_key}', headers={'Accept-Version': 'x.y'}, json={'value': URL_VALUE_TEST}
-        )
-        with application.app_context():
-            assert response.status_code == MethodVersionNotFound.code
+        with Auth(application, client) as access_token:
+            response = client.put(
+                f'/api/urls/{url_key}', headers={
+                    'Authorization': f'Bearer {access_token}',
+                    'Accept-Version': 'x.y'
+                }, json={'value': URL_VALUE_TEST}
+            )
+            with application.app_context():
+                assert response.status_code == MethodVersionNotFound.code
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -246,8 +270,9 @@ def test_url_api_put_wrong_missing(application: Flask, client: FlaskClient):
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.put(f'/api/urls/{url_key}')
-        assert response.status_code == 422
+        with Auth(application, client) as access_token:
+            response = client.put(f'/api/urls/{url_key}', headers={'Authorization': f'Bearer {access_token}'})
+            assert response.status_code == 422
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -264,8 +289,10 @@ def test_url_api_put_wrong_empty(application: Flask, client: FlaskClient):
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.put(f'/api/urls/{url_key}', json={'value': ''})
-        assert response.status_code == 422
+        with Auth(application, client) as access_token:
+            response = client.put(f'/api/urls/{url_key}', headers={'Authorization': f'Bearer {access_token}'},
+                                  json={'value': ''})
+            assert response.status_code == 422
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -281,8 +308,10 @@ def test_url_api_put_wrong_404(application: Flask, client: FlaskClient):
     """
     with application.app_context():
         redis_client.flushdb()
-    response = client.put(f'/api/urls/{URL_KEY_TEST}', json={'value': URL_VALUE_TEST})
-    assert response.status_code == 404
+    with Auth(application, client) as access_token:
+        response = client.put(f'/api/urls/{URL_KEY_TEST}', headers={'Authorization': f'Bearer {access_token}'},
+                              json={'value': URL_VALUE_TEST})
+        assert response.status_code == 404
 
 
 def test_url_api_put(application: Flask, client: FlaskClient):
@@ -296,13 +325,15 @@ def test_url_api_put(application: Flask, client: FlaskClient):
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.put(f'/api/urls/{url_key}', json={'value': URL_VALUE_BIS_TEST})
-        assert response.status_code == 200
-        assert response.json['url']['key'] == url_key
-        assert response.json['url']['value'] == URL_VALUE_BIS_TEST
-        assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
-        with application.app_context():
-            assert redis_client.get(url_key) == URL_VALUE_BIS_TEST
+        with Auth(application, client) as access_token:
+            response = client.put(f'/api/urls/{url_key}', headers={'Authorization': f'Bearer {access_token}'},
+                                  json={'value': URL_VALUE_BIS_TEST})
+            assert response.status_code == 200
+            assert response.json['url']['key'] == url_key
+            assert response.json['url']['value'] == URL_VALUE_BIS_TEST
+            assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
+            with application.app_context():
+                assert redis_client.get(f'url:{url_key}') == URL_VALUE_BIS_TEST
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -316,9 +347,13 @@ def test_url_api_delete_wrong_method_version_not_found(application: Flask, clien
     :param client: Flask Client.
     :type client: FlaskClient
     """
-    response = client.delete(f'/api/urls/{URL_KEY_TEST}', headers={'Accept-Version': 'x.y'})
-    with application.app_context():
-        assert response.status_code == MethodVersionNotFound.code
+    with Auth(application, client) as access_token:
+        response = client.delete(f'/api/urls/{URL_KEY_TEST}', headers={
+            'Authorization': f'Bearer {access_token}',
+            'Accept-Version': 'x.y'
+        })
+        with application.app_context():
+            assert response.status_code == MethodVersionNotFound.code
 
 
 def test_url_api_delete_wrong_missing(application: Flask, client: FlaskClient):
@@ -331,8 +366,9 @@ def test_url_api_delete_wrong_missing(application: Flask, client: FlaskClient):
     """
     with application.app_context():
         redis_client.flushdb()
-    response = client.delete(f'/api/urls/{URL_KEY_TEST}')
-    assert response.status_code == 404
+    with Auth(application, client) as access_token:
+        response = client.delete(f'/api/urls/{URL_KEY_TEST}', headers={'Authorization': f'Bearer {access_token}'})
+        assert response.status_code == 404
 
 
 def test_url_api_delete(application: Flask, client: FlaskClient):
@@ -346,10 +382,11 @@ def test_url_api_delete(application: Flask, client: FlaskClient):
     with application.app_context():
         url_key = insert_url(URL_VALUE_TEST)
     try:
-        response = client.delete(f'/api/urls/{url_key}')
-        assert response.status_code == 204
-        with application.app_context():
-            assert redis_client.get(url_key) is None
+        with Auth(application, client) as access_token:
+            response = client.delete(f'/api/urls/{url_key}', headers={'Authorization': f'Bearer {access_token}'})
+            assert response.status_code == 204
+            with application.app_context():
+                assert redis_client.get(f'url:{url_key}') is None
     finally:
         with application.app_context():
-            redis_client.delete(url_key)
+            redis_client.delete(f'url:{url_key}')
