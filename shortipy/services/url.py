@@ -2,6 +2,7 @@
 
 """shortipy.services.url file."""
 
+from typing import Final
 from string import ascii_lowercase
 from os import linesep
 from random import SystemRandom
@@ -9,8 +10,11 @@ from random import SystemRandom
 from click import STRING, option
 from flask import Flask
 from flask.cli import AppGroup
+from werkzeug.exceptions import NotFound
 
 from shortipy.services.redis import redis_client
+
+URL_KEYS_DOMAIN: Final = 'url'
 
 cli = AppGroup('urls', help='Manage urls.')
 
@@ -34,7 +38,8 @@ def get_urls() -> dict[str, str]:
     :return: Dictionary of urls (keys and values).
     :rtype: dict[str, str]
     """
-    return {key: get_url_value(key) for key in redis_client.keys('*')}
+    return {key.removeprefix(f'{URL_KEYS_DOMAIN}:'): redis_client.get(key)
+            for key in redis_client.keys(f'{URL_KEYS_DOMAIN}:*')}
 
 
 def get_url_value(key: str) -> str | None:
@@ -45,7 +50,7 @@ def get_url_value(key: str) -> str | None:
     :return: Url value found or None.
     :rtype: str | None
     """
-    return redis_client.get(key)
+    return redis_client.get(f'{URL_KEYS_DOMAIN}:{key}')
 
 
 def insert_url(value: str) -> str:
@@ -58,7 +63,7 @@ def insert_url(value: str) -> str:
     """
     while True:
         key = generate_key()
-        result = redis_client.set(key, value, nx=True)
+        result = redis_client.set(f'{URL_KEYS_DOMAIN}:{key}', value, nx=True)
         if result is not None:
             break
     return key
@@ -74,11 +79,12 @@ def update_url(key: str, value: str | None) -> str:
     :return: New url value or None if no key found.
     :rtype: str | None
     """
-    url_value = redis_client.get(key)
-    if url_value is not None:
-        redis_client.set(key, value)
-        url_value = value
-    return url_value
+    url_value = get_url_value(key)
+    if url_value is None:
+        raise NotFound('Url not found')
+
+    redis_client.set(f'{URL_KEYS_DOMAIN}:{key}', value)
+    return value
 
 
 def delete_url(key: str):
@@ -87,7 +93,10 @@ def delete_url(key: str):
     :param key: Url key to delete.
     :type key: str
     """
-    return redis_client.delete(key)
+    if get_url_value(key) is None:
+        raise NotFound('Url not found')
+
+    return redis_client.delete(f'{URL_KEYS_DOMAIN}:{key}')
 # endregion
 
 
@@ -124,7 +133,7 @@ def del_url(key: str):
     :param key; Key.
     :type key: str
     """
-    print(f'Deleting {key}...')
-    redis_client.delete(key)
+    print(f'Deleting url: {key}...')
+    delete_url(key)
     print('Done.')
 # endregion

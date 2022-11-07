@@ -4,6 +4,7 @@
 
 from flask import Flask, Blueprint, request, abort
 from flask.views import MethodView
+from flask_jwt_extended import jwt_required
 from webargs import fields
 from webargs.flaskparser import use_args
 from marshmallow.validate import Length
@@ -39,6 +40,7 @@ class UrlListAPI(MethodView):
         self.url_schema = UrlSchema()
         self.urls_schema = UrlSchema(many=True)
 
+    @jwt_required()
     def get(self):
         """Get urls.
 
@@ -52,6 +54,7 @@ class UrlListAPI(MethodView):
             return {'urls': self.urls_schema.dump([{'key': key, 'value': value} for key, value in urls.items()])}
         raise MethodVersionNotFound()
 
+    @jwt_required()
     @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
     def post(self, args: dict):
         """Post url.
@@ -75,6 +78,7 @@ class UrlAPI(MethodView):
         """UrlAPI constructor."""
         self.url_schema = UrlSchema()
 
+    @jwt_required()
     def get(self, key: str):
         """Get url.
 
@@ -90,6 +94,7 @@ class UrlAPI(MethodView):
             return {'url': self.url_schema.dump({'key': key, 'value': value})}
         raise MethodVersionNotFound()
 
+    @jwt_required()
     @use_args({'value': fields.Str(required=True, validate=Length(min=1))}, location='json')
     def put(self, args: dict, key: str):
         """Put url.
@@ -102,13 +107,11 @@ class UrlAPI(MethodView):
         :rtype: dict[str, str]
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
-            value = update_url(key, args['value'])
-            if value is None:
-                abort(404)
-            return {'url': self.url_schema.dump({'key': key, 'value': value})}
+            return {'url': self.url_schema.dump({'key': key, 'value': update_url(key, args['value'])})}
         raise MethodVersionNotFound()
 
     @staticmethod
+    @jwt_required()
     def delete(key: str):
         """Delete url.
 
@@ -118,15 +121,13 @@ class UrlAPI(MethodView):
         :rtype: dict[str, str]
         """
         if request.headers.get('Accept-Version', '1.0') == '1.0':
-            if get_url_value(key) is None:
-                abort(404)
             delete_url(key)
             return '', 204
         raise MethodVersionNotFound()
 
 
 def register_api(app: Flask | Blueprint) -> Flask | Blueprint:
-    """Register API.
+    """Register API controller.
 
     :param app: The Flask (or Blueprint) application instance.
     :type app: Flask | Blueprint
