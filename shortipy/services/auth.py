@@ -70,7 +70,9 @@ def login(username: str, password: str | bytes) -> str:
     :return: Access token.
     :rtype: str
     """
-    if not bcrypt.check_password_hash(redis_client.hget(f'{USER_KEYS_DOMAIN}:{username}', 'password'), normalize_input(password)):
+    if not bcrypt.check_password_hash(
+            redis_client.hget(f'{USER_KEYS_DOMAIN}:{username}', 'password'), normalize_input(password)
+    ):
         raise Unauthorized('Bad username or password')
 
     access_token = create_access_token(identity=username)

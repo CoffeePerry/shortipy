@@ -50,6 +50,20 @@ def test_del_url(application: Flask, runner: FlaskCliRunner):
             redis_client.delete(f'{URL_KEYS_DOMAIN}:{url_key}')
 
 
+def test_url_list_api_get_wrong_unauthorized(application: Flask, client: FlaskClient):
+    """Test UrlListAPI GET wrong: unauthorized.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    with application.app_context():
+        redis_client.flushdb()
+    response = client.get('/api/urls/')
+    assert response.status_code == 401
+
+
 def test_url_list_api_get_wrong_method_version_not_found(application: Flask, client: FlaskClient):
     """Test UrlListAPI GET wrong: method version not found.
 
@@ -80,6 +94,20 @@ def test_url_list_api_get_404(application: Flask, client: FlaskClient):
     with Auth(application, client) as access_token:
         response = client.get('/api/urls/', headers={'Authorization': f'Bearer {access_token}'})
         assert response.status_code == 404
+
+
+def test_url_api_get_wrong_unauthorized(application: Flask, client: FlaskClient):
+    """Test UrlAPI GET wrong: unauthorized.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    with application.app_context():
+        redis_client.flushdb()
+    response = client.get(f'/api/urls/{URL_KEY_TEST}')
+    assert response.status_code == 401
 
 
 def test_url_api_get_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -118,6 +146,16 @@ def test_url_api_get_404(application: Flask, client: FlaskClient):
     with Auth(application, client) as access_token:
         response = client.get(f'/api/urls/{URL_KEY_TEST}', headers={'Authorization': f'Bearer {access_token}'})
         assert response.status_code == 404
+
+
+def test_url_list_api_post_unauthorized(client: FlaskClient):
+    """Test UrlListAPI POST wrong: unauthorized.
+
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    response = client.post('/api/urls/', json={'value': URL_VALUE_TEST})
+    assert response.status_code == 401
 
 
 def test_url_list_api_post_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -234,6 +272,24 @@ def test_url_api_get(application: Flask, client: FlaskClient):
             delete_url(url_key)
 
 
+def test_url_api_put_wrong_unauthorized(application: Flask, client: FlaskClient):
+    """Test UrlAPI PUT wrong: unauthorized.
+
+    :param application: Flask application.
+    :type application: Flask
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    with application.app_context():
+        url_key = insert_url(URL_VALUE_TEST)
+    try:
+        response = client.put(f'/api/urls/{url_key}', json={'value': URL_VALUE_TEST})
+        assert response.status_code == 401
+    finally:
+        with application.app_context():
+            delete_url(url_key)
+
+
 def test_url_api_put_wrong_method_version_not_found(application: Flask, client: FlaskClient):
     """Test UrlAPI PUT wrong: method version not found.
 
@@ -337,6 +393,16 @@ def test_url_api_put(application: Flask, client: FlaskClient):
     finally:
         with application.app_context():
             delete_url(url_key)
+
+
+def test_url_api_delete_wrong_unauthorized(client: FlaskClient):
+    """Test UrlAPI DELETE wrong: unauthorized.
+
+    :param client: Flask Client.
+    :type client: FlaskClient
+    """
+    response = client.delete(f'/api/urls/{URL_KEY_TEST}')
+    assert response.status_code == 401
 
 
 def test_url_api_delete_wrong_method_version_not_found(application: Flask, client: FlaskClient):
