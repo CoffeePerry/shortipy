@@ -7,7 +7,7 @@ from flask.testing import FlaskCliRunner, FlaskClient
 
 from shortipy.services.exceptions import MethodVersionNotFound
 from shortipy.services.redis import redis_client
-from shortipy.services.url import insert_url, delete_url
+from shortipy.services.url import URL_KEYS_DOMAIN, insert_url, delete_url
 
 from tests import URL_KEY_TEST, URL_VALUE_TEST, URL_VALUE_BIS_TEST
 from tests.test_auth import Auth
@@ -25,7 +25,7 @@ def test_new_url(application: Flask, runner: FlaskCliRunner):
     url_key = result.output[-8:-2]
     try:
         with application.app_context():
-            assert redis_client.get(f'url:{url_key}') == URL_VALUE_TEST
+            assert redis_client.get(f'{URL_KEYS_DOMAIN}:{url_key}') == URL_VALUE_TEST
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -44,10 +44,10 @@ def test_del_url(application: Flask, runner: FlaskCliRunner):
     try:
         runner.invoke(args=['urls', 'del', '-k', url_key])
         with application.app_context():
-            assert redis_client.get(f'url:{url_key}') is None
+            assert redis_client.get(f'{URL_KEYS_DOMAIN}:{url_key}') is None
     finally:
         with application.app_context():
-            redis_client.delete(f'url:{url_key}')
+            redis_client.delete(f'{URL_KEYS_DOMAIN}:{url_key}')
 
 
 def test_url_list_api_get_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -182,7 +182,7 @@ def test_url_list_api_post(application: Flask, client: FlaskClient):
             assert response.json['url']['value'] == URL_VALUE_TEST
             assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
             with application.app_context():
-                assert redis_client.get(f'url:{url_key}') == URL_VALUE_TEST
+                assert redis_client.get(f'{URL_KEYS_DOMAIN}:{url_key}') == URL_VALUE_TEST
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -333,7 +333,7 @@ def test_url_api_put(application: Flask, client: FlaskClient):
             assert response.json['url']['value'] == URL_VALUE_BIS_TEST
             assert response.json['url']['links']['self'] == f'/api/urls/{url_key}'
             with application.app_context():
-                assert redis_client.get(f'url:{url_key}') == URL_VALUE_BIS_TEST
+                assert redis_client.get(f'{URL_KEYS_DOMAIN}:{url_key}') == URL_VALUE_BIS_TEST
     finally:
         with application.app_context():
             delete_url(url_key)
@@ -386,7 +386,7 @@ def test_url_api_delete(application: Flask, client: FlaskClient):
             response = client.delete(f'/api/urls/{url_key}', headers={'Authorization': f'Bearer {access_token}'})
             assert response.status_code == 204
             with application.app_context():
-                assert redis_client.get(f'url:{url_key}') is None
+                assert redis_client.get(f'{URL_KEYS_DOMAIN}:{url_key}') is None
     finally:
         with application.app_context():
-            redis_client.delete(f'url:{url_key}')
+            redis_client.delete(f'{URL_KEYS_DOMAIN}:{url_key}')

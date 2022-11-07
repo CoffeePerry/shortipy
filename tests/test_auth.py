@@ -8,7 +8,7 @@ from pytest import raises
 
 from shortipy.services.exceptions import MethodVersionNotFound
 from shortipy.services.redis import redis_client
-from shortipy.services.auth import insert_user, delete_user, normalize_input
+from shortipy.services.auth import USER_KEYS_DOMAIN, insert_user, delete_user, normalize_input
 
 from tests import USER_USERNAME, USER_PASSWORD, USER_PASSWORD_WRONG
 
@@ -46,7 +46,7 @@ class Auth:
         :param exc_tb: Exception traceback.
         """
         with self.application.app_context():
-            redis_client.delete(f'user:{USER_USERNAME}')
+            redis_client.delete(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}')
 
 
 def test_insert_user_wrong_duplicate(application: Flask):
@@ -62,7 +62,7 @@ def test_insert_user_wrong_duplicate(application: Flask):
             with raises(Exception, match=f'User "{USER_USERNAME}" already exists'):
                 insert_user(USER_USERNAME, USER_PASSWORD)
         finally:
-            redis_client.delete(f'user:{USER_USERNAME}')
+            redis_client.delete(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}')
 
 
 def test_delete_user_wrong_duplicate(application: Flask):
@@ -101,7 +101,7 @@ def test_new_user(application: Flask, runner: FlaskCliRunner):
     assert 'Done.' in result.output
     try:
         with application.app_context():
-            assert redis_client.hget(f'user:{USER_USERNAME}', 'password') is not None
+            assert redis_client.hget(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}', 'password') is not None
     finally:
         with application.app_context():
             delete_user(USER_USERNAME)
@@ -120,10 +120,10 @@ def test_del_user(application: Flask, runner: FlaskCliRunner):
     try:
         runner.invoke(args=['users', 'del', '-u', USER_USERNAME])
         with application.app_context():
-            assert not redis_client.hgetall(f'user:{USER_USERNAME}')
+            assert not redis_client.hgetall(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}')
     finally:
         with application.app_context():
-            redis_client.delete(f'user:{USER_USERNAME}')
+            redis_client.delete(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}')
 
 
 def test_auth_list_api_post_wrong_method_version_not_found(application: Flask, client: FlaskClient):
@@ -186,7 +186,7 @@ def test_auth_list_api_post_wrong_unauthorized(application: Flask, client: Flask
         assert response.status_code == 401
     finally:
         with application.app_context():
-            redis_client.delete(f'user:{USER_USERNAME}')
+            redis_client.delete(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}')
 
 
 def test_auth_list_api_post(application: Flask, client: FlaskClient):
@@ -206,4 +206,4 @@ def test_auth_list_api_post(application: Flask, client: FlaskClient):
         assert response.json['auth']['access_token'] != ''
     finally:
         with application.app_context():
-            redis_client.delete(f'user:{USER_USERNAME}')
+            redis_client.delete(f'{USER_KEYS_DOMAIN}:{USER_USERNAME}')

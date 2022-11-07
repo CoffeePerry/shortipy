@@ -1,6 +1,9 @@
 # coding=utf-8
 
 """shortipy.services.auth file."""
+
+from typing import Final
+
 from click import option, STRING
 from flask import Flask
 from flask.cli import AppGroup
@@ -9,6 +12,8 @@ from werkzeug.exceptions import NotFound, Unauthorized
 
 from shortipy.services.redis import redis_client
 from shortipy.services.hash import bcrypt, normalize_input
+
+USER_KEYS_DOMAIN: Final = 'user'
 
 jwt = JWTManager()
 cli = AppGroup('users', help='Manage users.')
@@ -35,12 +40,12 @@ def insert_user(username: str, password: str | bytes):
     :param password: User's password.
     :type password: str | bytes
     """
-    if redis_client.hget(f'user:{username}', 'password') is not None:
+    if redis_client.hget(f'{USER_KEYS_DOMAIN}:{username}', 'password') is not None:
         raise Exception(f'User "{username}" already exists')
 
     password_hash = bcrypt.generate_password_hash(normalize_input(password))
 
-    redis_client.hset(f'user:{username}', 'password', password_hash)
+    redis_client.hset(f'{USER_KEYS_DOMAIN}:{username}', 'password', password_hash)
 
 
 def delete_user(username: str):
@@ -49,10 +54,10 @@ def delete_user(username: str):
     :param username: User's username.
     :type username: str
     """
-    if not redis_client.hgetall(f'user:{username}'):
+    if not redis_client.hgetall(f'{USER_KEYS_DOMAIN}:{username}'):
         raise NotFound(f'User "{username}" not found')
 
-    redis_client.delete(f'user:{username}')
+    redis_client.delete(f'{USER_KEYS_DOMAIN}:{username}')
 
 
 def login(username: str, password: str | bytes) -> str:
@@ -65,7 +70,7 @@ def login(username: str, password: str | bytes) -> str:
     :return: Access token.
     :rtype: str
     """
-    if not bcrypt.check_password_hash(redis_client.hget(f'user:{username}', 'password'), normalize_input(password)):
+    if not bcrypt.check_password_hash(redis_client.hget(f'{USER_KEYS_DOMAIN}:{username}', 'password'), normalize_input(password)):
         raise Unauthorized('Bad username or password')
 
     access_token = create_access_token(identity=username)

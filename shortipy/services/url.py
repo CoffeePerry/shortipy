@@ -133,7 +133,7 @@ def del_url(key: str):
     :param key; Key.
     :type key: str
     """
-    print(f'Deleting {key}...')
+    print(f'Deleting url: {key}...')
     delete_url(key)
     print('Done.')
 # endregion
