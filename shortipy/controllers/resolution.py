@@ -19,7 +19,7 @@ def resolve(key: str) -> Response:
     :return: Flask response.
     :rtype: Response
     """
-    value = redis_client.get(escape(key))
+    value = redis_client.get(f'url:{escape(key)}')
     if value is None:
         abort(404)
     return redirect(value)

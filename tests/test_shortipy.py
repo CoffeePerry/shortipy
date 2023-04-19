@@ -3,6 +3,7 @@
 """tests.test_shortipy file."""
 
 from os import linesep, path, mkdir, rmdir, remove, rename
+from secrets import token_bytes
 
 from flask import Flask
 from flask.testing import FlaskCliRunner
@@ -30,7 +31,7 @@ def test_create_app(application: Flask):
         todo_remove_file = True
     try:
         assert not create_app().testing
-        assert create_app({'TESTING': True}).testing
+        assert create_app({'TESTING': True, 'SECRET_KEY': token_bytes(32)}).testing
     finally:
         try:
             if todo_remove_file and path.isfile(config_filename):

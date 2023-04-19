@@ -3,6 +3,7 @@
 """tests.conftest file."""
 
 from typing import Generator
+from secrets import token_bytes
 
 from flask import Flask
 from flask.testing import FlaskClient, FlaskCliRunner
@@ -23,11 +24,11 @@ def application() -> Generator[Flask, None, None]:
     """
     __app = create_app({
         'TESTING': True,
-        'SECRET_KEY': b'test',
+        'SECRET_KEY': token_bytes(32),
         'REDIS_URL': 'redis://127.0.0.1:6379/0'
     })
     with __app.app_context():
-        redis_client.set(URL_KEY_TEST, URL_VALUE_TEST)
+        redis_client.set(f'url:{URL_KEY_TEST}', URL_VALUE_TEST)
     try:
         yield __app
     finally:

@@ -16,7 +16,7 @@ from shortipy.services.url import init_app as init_url
 from shortipy.controllers.resolution import resolution_blueprint
 from shortipy.controllers.api import init_app as init_api
 
-VERSION: Final = '1.3.0'
+VERSION: Final = '1.3.1'
 CONFIG_FILENAME: Final = 'config.py'
 
 
@@ -32,8 +32,9 @@ def create_app(options: dict | None = None) -> Flask | None:
 
     app.config.from_object(Config())
 
-    if not isinstance(options, dict | None):
+    if (options is not None) and (not isinstance(options, dict)):
         raise Exception('Invalid options')
+
     if (options is None) or (not options.get('TESTING')):
         if not path.isdir(app.instance_path):
             makedirs(app.instance_path)
@@ -45,11 +46,11 @@ def create_app(options: dict | None = None) -> Flask | None:
             raise Exception(f'Configuration file not found: {config_file}')
         app.config.from_pyfile(config_file)
 
-        if app.config.get('SECRET_KEY') is None:
-            raise Exception(f'Set variable SECRET_KEY with random string in file: {config_file}')
-
     if options is not None:
         app.config.from_mapping(options)
+
+    if app.config.get('SECRET_KEY') is None:
+        raise Exception(f'Set variable SECRET_KEY with random string in file: {config_file}')
 
     init_url(init_serialization(init_auth(init_hash(init_redis(app)))))
 
