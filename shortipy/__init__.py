@@ -50,7 +50,7 @@ def create_app(options: dict | None = None) -> Flask | None:
         app.config.from_mapping(options)
 
     if app.config.get('SECRET_KEY') is None:
-        raise Exception(f'Set variable SECRET_KEY with random string in file: {config_file}')
+        raise Exception('Set variable SECRET_KEY with cryptographically strong random')
 
     init_url(init_serialization(init_auth(init_hash(init_redis(app)))))
 
